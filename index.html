@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Roboto:ital,wght@0,100;0,300;0,400;0,500;0,700;0,900;1,100;1,300;1,400;1,500;1,700;1,900&display=swap" rel="stylesheet">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CIRCLE.IO</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<canvas id="gameCanvas"></canvas>
+
+<!-- Main Menu -->
+<div id="menu">
+  <h1 id="gameTitle">CIRCLE.IO</h1>
+  <button id="startButton">Start</button>
+  <button id="customizeButton">Customize</button>
+  <button id="upgradeButton">Upgrade</button>
+</div>
+
+<!-- Upgrade Menu -->
+<div id="upgradeMenu" class="menu">
+  <h3><span id="coinsDisplay">0</span></h3> <!-- Updated this line -->
+  <ul>
+    <li>
+      <button class="upgrade-option" data-upgrade="speed">Increase Speed (Cost: <span id="speedCost">10</span> coins)</button>
+    </li>
+    <li>
+      <button class="upgrade-option" data-upgrade="fireRate">Increase Fire Rate (Cost: <span id="fireRateCost">10</span> coins)</button>
+    </li>
+    <li>
+      <button class="upgrade-option" data-upgrade="bulletSize">Increase Bullet Size (Cost: <span id="bulletSizeCost">10</span> coins)</button>
+    </li>
+  </ul>
+
+  <!-- Cross icon for closing the menu -->
+  <span id="closeUpgradeButton" class="close-button">✖</span>
+
+  <!-- Stats display -->
+  <div id="statsDisplay">
+    <p>Speed: <span id="speedStat">3.0</span></p>
+    <p>Fire Rate: <span id="fireRateStat">500</span> ms</p>
+    <p>Bullet Size: <span id="bulletSizeStat">5</span></p>
+  </div>
+</div>
+
+
+
+
+
+<!-- Customize Menu -->
+<div id="customizeMenu" class="menu">
+  <h2>Customize</h2>
+  <p>Select Color:</p>
+  <button class="color-option" data-color="white" style="background-color: white;">White</button>
+  <button class="color-option" data-color="blue" style="background-color: blue;">Blue</button>
+  <button class="color-option" data-color="green" style="background-color: green;">Green</button>
+  <button id="closeCustomizeButton">Close</button>
+</div>
+
+<script src="main.js"></script>
+</body>
+</html>
