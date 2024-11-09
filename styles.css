@@ -11,7 +11,7 @@ body {
     font-size: 48px;
     color: white;
     position: absolute;
-    top: 20px;
+    top: 100px;  /* Increase this value to move the title further down */
     left: 50%;
     transform: translateX(-50%);
     z-index: 10;
@@ -34,24 +34,45 @@ body {
     z-index: 5;
 }
 
-/* Main menu buttons */
+/* Style for menu buttons */
 #menu button {
-    font-family: 'Roboto', sans-serif; /* Apply the font to the body */
     display: block;
-    margin: 10px auto;
-    padding: 20px; /* Increase padding for a bigger button */
-    width: 200px; /* Increase width */
-    background-color: #222;
+    margin: 20px auto;
+    padding: 15px 30px;
+    width: 200px;
+    background: linear-gradient(135deg, #4e73df, #1e3d8d); /* Gradient background */
     color: white;
-    border: none;
-    border-radius: 5px;
+    border: 2px solid #2d4a8d; /* Border color to match the background */
+    border-radius: 12px;
     font-size: 18px;
+    font-family: 'Arial', sans-serif;
+    text-align: center;
     cursor: pointer;
-    z-index: 10; /* Ensure they appear above background */
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2); /* Subtle shadow for depth */
+    transition: all 0.3s ease; /* Smooth transition on hover */
 }
 
+/* Hover effect for buttons */
 #menu button:hover {
-    background-color: #444;
+    background: linear-gradient(135deg, #2d4a8d, #4e73df); /* Swap gradient colors */
+    border-color: #1e3d8d; /* Darker border on hover */
+    transform: translateY(-5px); /* Lift effect on hover */
+    box-shadow: 0 6px 12px rgba(0, 0, 0, 0.3); /* Slightly stronger shadow on hover */
+}
+
+/* Focus effect to highlight selected button */
+#menu button:focus {
+    outline: none; /* Remove default focus outline */
+    box-shadow: 0 0 0 4px rgba(255, 255, 255, 0.6); /* White glow effect */
+}
+
+/* Adding a button disabled state */
+#menu button:disabled {
+    background: #cccccc; /* Light gray background */
+    color: #999999; /* Lighter text */
+    border-color: #999999; /* Lighter border */
+    cursor: not-allowed; /* No pointer cursor */
+    box-shadow: none; /* Remove shadow */
 }
 
 /* Submenu styling */
@@ -73,18 +94,22 @@ body {
 /* Upgrade options */
 .upgrade-option {
     display: block;
-    margin: 10px 0; /* Spacing between buttons */
+    margin: 10px 0;
     padding: 10px;
-    background-color: #333;
+    background-color: #333; /* Dark background */
     color: white;
     border: none;
     width: 100%;
     cursor: pointer;
     font-size: 16px;
+    border-radius: 5px; /* Rounded corners */
+    transition: all 0.3s ease; /* Smooth transition */
 }
 
 .upgrade-option:hover {
-    background-color: #555;
+    background-color: #555; /* Lighter background on hover */
+    transform: translateY(-3px); /* Lift effect on hover */
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3); /* Subtle shadow effect */
 }
 
 /* Close buttons for submenus */
@@ -102,29 +127,29 @@ body {
 
 #closeUpgradeButton:hover,
 #closeCustomizeButton:hover {
-    background-color: #aaa;
+    background-color: #aaa; /* Slightly darker on hover */
 }
 
 /* Upgrade menu specific styling */
 #upgradeMenu {
-    background-color: rgba(0, 0, 0, 1);
-    font-family: 'Roboto', sans-serif; /* Apply the font to the body */
+    background-color: rgba(0, 0, 0, 0.85); /* Darker background with transparency */
     color: white;
     padding: 30px; /* Increased padding for more spacing */
     border-radius: 10px;
     width: 400px; /* Increased width */
     position: fixed; /* Fixed positioning for centering */
-    top: 50%; /* Center vertically */
-    left: 50%; /* Center horizontally */
-    transform: translate(-50%, -50%); /* Adjust position */
-    box-shadow: 0 6px 12px rgba(0, 0, 0, 0.3);
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%); /* Centered */
+    box-shadow: 0 6px 12px rgba(0, 0, 0, 0.3); /* Soft shadow for depth */
     z-index: 15;
-    text-align: center; /* Center the text */
+    text-align: center;
+    font-family: 'Arial', sans-serif; /* Apply font to body */
 }
 
 /* Coins display in the Upgrade Menu */
 #coinsDisplay {
-    font-size: 18px;
+    font-size: 20px;
     font-weight: bold;
     margin: 15px 0;
     color: #ffeb3b; /* Highlighted color for coins */
