@@ -12,6 +12,7 @@ const settingsButton = document.getElementById('settingsButton');
 let soundEnabled = true; // Sound is enabled by default
 
 
+
 // Load sound effects
 const hitSound = new Audio('hit.mp3');
 const shotSound = new Audio('shot.mp3');
@@ -31,11 +32,14 @@ let health = 3;
 let gameStarted = false;
 let spawnInterval = 2000;
 let spawnIntervalId;
+let multipleBulletsCount = 1; // Start with shooting 1 bullet
+
 
 let upgradeCosts = {
     speed: 10,
     fireRate: 10,
-    bulletSize: 10
+    bulletSize: 10,
+    multipleBullets: 100
 };
 
 // Player and upgrade variables
@@ -135,12 +139,13 @@ window.addEventListener('resize', () => {
     resetPlayerPosition(); // Keep player in the center on resize
 });
 
-// Hide and show main menu buttons in submenus
+// Hide the main buttons (start button, upgrade button)
 function hideMainButtons() {
     startButton.style.display = 'none';
     upgradeButton.style.display = 'none';
 }
 
+// Show the main buttons (start button, upgrade button)
 function showMainButtons() {
     startButton.style.display = 'block';
     upgradeButton.style.display = 'block';
@@ -163,6 +168,8 @@ function updateUpgradeMenuStats() {
     document.getElementById('speedStat').textContent = speed.toFixed(1);
     document.getElementById('fireRateStat').textContent = fireRate;
     document.getElementById('bulletSizeStat').textContent = bulletSize;
+    document.getElementById('multipleBulletsStat').textContent = multipleBulletsCount; // Display number of bullets
+    document.getElementById('multipleBulletsCost').textContent = multipleBulletsCost; // Display cost of multiple bullets upgrade
 }
 
 // Upgrade button event listener
@@ -170,46 +177,78 @@ upgradeButton.addEventListener('click', () => {
     playClickSound(); // Play click sound
     hideMainButtons(); // Hide main buttons when upgrade menu opens
     updateUpgradeMenuCoins();
-    updateUpgradeMenuStats(); // Update stats display before showing the menu
-    upgradeMenu.style.display = 'flex';
+    upgradeMenu.style.display = 'flex'; // Show the upgrade menu
 });
 
 // Close upgrade button event listener
 closeUpgradeButton.addEventListener('click', () => {
     playClickSound(); // Play click sound
-    upgradeMenu.style.display = 'none';
-    showMainButtons();
+    upgradeMenu.style.display = 'none'; // Hide the upgrade menu
+    showMainButtons(); // Show main buttons again
 });
 
-// Upgrades
 document.querySelectorAll('.upgrade-option').forEach((button) => {
     button.addEventListener('click', () => {
-        playClickSound(); // Play click sound
         const upgradeType = button.dataset.upgrade;
 
-        if (coins >= upgradeCosts[upgradeType]) {
-            coins -= upgradeCosts[upgradeType];
-            if (upgradeType === 'speed') {
-                speed += 0.5;
-            } else if (upgradeType === 'fireRate') {
-                fireRate = Math.max(fireRate - 70, 0);
-            } else if (upgradeType === 'bulletSize') {
-                bulletSize += 2; // Increase bullet size
+        // Handle the 'Multiple Bullets' upgrade separately
+        if (upgradeType === 'multipleBullets') {
+            if (coins >= upgradeCosts.multipleBullets) {
+                multipleBulletsCount++; // Increase the number of bullets to shoot
+                coins -= upgradeCosts.multipleBullets; // Deduct the cost for the upgrade
+                upgradeCosts.multipleBullets = Math.floor(upgradeCosts.multipleBullets * 1.5); // Increase cost for the next upgrade
+
+                // Update the displayed cost for this upgrade
+                button.textContent = `Multiple Bullets (Cost: ${upgradeCosts.multipleBullets} coins)`; // Correctly show cost
+                updateUpgradeMenuCoins();
+                updateUpgradeMenuStats(); // Update stats display after upgrade
+            } else {
+                alert('Not enough coins!');
             }
-
-            // Increase the cost for the next purchase of this upgrade
-            upgradeCosts[upgradeType] = Math.floor(upgradeCosts[upgradeType] * 1.5);
-
-            // Update the displayed cost for this upgrade
-            button.textContent = `Increase ${upgradeType.charAt(0).toUpperCase() + upgradeType.slice(1)} (Cost: ${upgradeCosts[upgradeType]} coins)`;
-
-            updateUpgradeMenuCoins();
-            updateUpgradeMenuStats(); // Update stats display after upgrade
         } else {
-            alert('Not enough coins!');
+            // Handle other upgrades like speed, fireRate, bulletSize
+            if (coins >= upgradeCosts[upgradeType]) {
+                coins -= upgradeCosts[upgradeType];
+                if (upgradeType === 'speed') {
+                    speed += 0.5;
+                } else if (upgradeType === 'fireRate') {
+                    fireRate = Math.max(fireRate - 70, 0);
+                } else if (upgradeType === 'bulletSize') {
+                    bulletSize += 2; // Increase bullet size
+                }
+
+                // Increase the cost for the next purchase of this upgrade
+                upgradeCosts[upgradeType] = Math.floor(upgradeCosts[upgradeType] * 1.5);
+
+                // Update the displayed cost for this upgrade
+                button.textContent = `Increase ${upgradeType.charAt(0).toUpperCase() + upgradeType.slice(1)} (Cost: ${upgradeCosts[upgradeType]} coins)`;
+
+                updateUpgradeMenuCoins();
+                updateUpgradeMenuStats(); // Update stats display after upgrade
+            } else {
+                alert('Not enough coins!');
+            }
         }
     });
 });
+
+// Update the stats display in the upgrade menu
+function updateUpgradeMenuStats() {
+    document.getElementById('speedStat').textContent = speed.toFixed(1);
+    document.getElementById('fireRateStat').textContent = fireRate;
+    document.getElementById('bulletSizeStat').textContent = bulletSize;
+    document.getElementById('multipleBulletsStat').textContent = multipleBulletsCount; // Display number of bullets
+    document.getElementById('multipleBulletsCost').textContent = upgradeCosts.multipleBullets; // Display cost of multiple bullets upgrade
+}
+
+// Function to update the coins display
+function updateUpgradeMenuCoins() {
+    coinsDisplay.textContent = `Coins: ${coins}`;
+}
+
+
+
+
 
 // Start the game
 function startGame() {
@@ -254,20 +293,31 @@ function spawnEnemy() {
     });
 }
 
-// Continuous shooting
+// Continuous shooting with multiple bullets
 setInterval(() => {
     if (!gameStarted) return;
     if (shootingDirection) { // Check if there's a direction set
         const magnitude = Math.hypot(shootingDirection.x, shootingDirection.y);
-        bullets.push({
-            x: player.x,
-            y: player.y,
-            vx: (shootingDirection.x / magnitude) * 10,
-            vy: (shootingDirection.y / magnitude) * 10,
-        });
+        const baseAngle = Math.atan2(shootingDirection.y, shootingDirection.x); // Base direction
+
+        // Shoot multiple bullets based on the multipleBulletsCount
+        for (let i = 0; i < multipleBulletsCount; i++) {
+            // Spread bullets around the base angle
+            const angleOffset = (Math.PI / 12) * (i - Math.floor(multipleBulletsCount / 2)); // Fan the bullets evenly
+            const angle = baseAngle + angleOffset;
+
+            bullets.push({
+                x: player.x,
+                y: player.y,
+                vx: Math.cos(angle) * 10, // Bullet direction using angle
+                vy: Math.sin(angle) * 10, // Bullet direction using angle
+            });
+        }
+
         shotSound.play(); // Play the shot sound effect
     }
 }, fireRate);
+
 
 function updateUpgradeMenuCoins() {
     coinsDisplay.textContent = `Coins: ${coins}`;
@@ -479,12 +529,14 @@ const closeSettingsButton = document.getElementById('closeSettingsButton');
 // Event listener for the Settings button (opens the settings menu)
 settingsButton.addEventListener('click', () => {
     playClickSound(); // Play click sound
+
     settingsMenu.style.display = 'flex';  // Show settings menu
 });
 
 // Event listener for the Close button inside the settings menu
 closeSettingsButton.addEventListener('click', () => {
     playClickSound(); // Play click sound
+
     settingsMenu.style.display = 'none';  // Hide settings menu
 });
 
@@ -509,5 +561,7 @@ soundToggleButton.addEventListener('click', () => {
     // Optionally log the sound state (you can remove this later)
     console.log(`Sound Effects ${soundEnabled ? 'Enabled' : 'Disabled'}`);
 });
+
+
 
 
