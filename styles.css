@@ -196,4 +196,79 @@ body {
     margin: 10px 0; /* Space between list items */
 }
 
+/* Settings button */
+#settingsButton {
+    display: block;
+    margin-top: 20px;  /* Push it below the other buttons */
+    padding: 15px 30px;
+    width: 200px; /* Match the width of other buttons */
+    background: linear-gradient(135deg, #4e73df, #1e3d8d); /* Gradient background */
+    color: white;
+    border: 2px solid #2d4a8d; /* Border color to match the background */
+    border-radius: 12px;
+    font-size: 18px;
+    font-family: 'Arial', sans-serif;
+    text-align: center;
+    cursor: pointer;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2); /* Subtle shadow for depth */
+    transition: all 0.3s ease; /* Smooth transition on hover */
+    z-index: 10; /* Ensure it’s above other elements */
+    margin-bottom: 20px; /* Create some space between it and the bottom of the menu */
+}
+
+/* Hover effect for settings button */
+#settingsButton:hover {
+    background: linear-gradient(135deg, #2d4a8d, #4e73df); /* Swap gradient colors */
+    border-color: #1e3d8d; /* Darker border on hover */
+    transform: translateY(-5px); /* Lift effect on hover */
+    box-shadow: 0 6px 12px rgba(0, 0, 0, 0.3); /* Slightly stronger shadow on hover */
+}
+
+/* Focus effect to highlight selected button */
+#settingsButton:focus {
+    outline: none; /* Remove default focus outline */
+    box-shadow: 0 0 0 4px rgba(255, 255, 255, 0.6); /* White glow effect */
+}
+
+/* Settings Menu */
+#settingsMenu {
+    background-color: rgba(0, 0, 0, 0.85);
+    color: white;
+    padding: 20px;
+    border-radius: 10px;
+    width: 400px;
+    display: none; /* Initially hidden */
+    position: absolute;
+    top: 20%;
+    left: 50%;
+    transform: translate(-50%, -20%);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+    z-index: 15;
+    text-align: center;
+}
+
+#settingsMenu button {
+    padding: 10px 20px;
+    margin-top: 20px;
+    background: linear-gradient(135deg, #4e73df, #1e3d8d);
+    color: white;
+    border: 2px solid #2d4a8d;
+    border-radius: 12px;
+    cursor: pointer;
+    font-size: 18px;
+    transition: all 0.3s ease;
+}
+
+#settingsMenu button:hover {
+    background: linear-gradient(135deg, #2d4a8d, #4e73df);
+    border-color: #1e3d8d;
+    transform: translateY(-5px);
+    box-shadow: 0 6px 12px rgba(0, 0, 0, 0.3);
+}
+
+
+
+
+
+
 

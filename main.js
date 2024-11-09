@@ -6,11 +6,18 @@ const startButton = document.getElementById('startButton');
 const upgradeButton = document.getElementById('upgradeButton');
 const closeUpgradeButton = document.getElementById('closeUpgradeButton');
 const coinsDisplay = document.getElementById('coinsDisplay');
+const heartImage = new Image();
+heartImage.src = 'heart.png';
+const settingsButton = document.getElementById('settingsButton');
+let soundEnabled = true; // Sound is enabled by default
+
 
 // Load sound effects
 const hitSound = new Audio('hit.mp3');
 const shotSound = new Audio('shot.mp3');
 const lifeLostSound = new Audio('fhit.mp3'); // Load the life lost sound effect
+const clickSound = new Audio('click.mp3');
+
 
 // Canvas dimensions
 canvas.width = window.innerWidth;
@@ -49,6 +56,11 @@ const player = {
 function resetPlayerPosition() {
     player.x = canvas.width / 2;
     player.y = canvas.height / 2;
+}
+
+// Play the click sound whenever a button is clicked
+function playClickSound() {
+    clickSound.play();
 }
 
 // Background image
@@ -108,6 +120,7 @@ resizeCanvas();
 
 // Start button event listener
 startButton.addEventListener('click', () => {
+    playClickSound(); // Play click sound
     menu.style.display = 'none';
     gameStarted = true;
     resetPlayerPosition(); // Reset player position to the center when the game starts
@@ -154,6 +167,7 @@ function updateUpgradeMenuStats() {
 
 // Upgrade button event listener
 upgradeButton.addEventListener('click', () => {
+    playClickSound(); // Play click sound
     hideMainButtons(); // Hide main buttons when upgrade menu opens
     updateUpgradeMenuCoins();
     updateUpgradeMenuStats(); // Update stats display before showing the menu
@@ -162,6 +176,7 @@ upgradeButton.addEventListener('click', () => {
 
 // Close upgrade button event listener
 closeUpgradeButton.addEventListener('click', () => {
+    playClickSound(); // Play click sound
     upgradeMenu.style.display = 'none';
     showMainButtons();
 });
@@ -169,6 +184,7 @@ closeUpgradeButton.addEventListener('click', () => {
 // Upgrades
 document.querySelectorAll('.upgrade-option').forEach((button) => {
     button.addEventListener('click', () => {
+        playClickSound(); // Play click sound
         const upgradeType = button.dataset.upgrade;
 
         if (coins >= upgradeCosts[upgradeType]) {
@@ -349,6 +365,19 @@ function draw() {
         ctx.stroke();  // Adds thin stroke to bullets
     });
 
+    // Draw hearts based on the player's health
+    for (let i = 0; i < 3; i++) {
+        if (i < health) {
+            // Draw the heart image for each remaining life
+            ctx.drawImage(heartImage, 50 + i * 50, 20, 40, 40); // Adjust size to 40x40 for bigger hearts
+        } else {
+            // Optionally, you can add a transparent heart image or a different image to indicate a lost life
+            ctx.globalAlpha = 0.3; // Make the missing heart faded
+            ctx.drawImage(heartImage, 50 + i * 50, 20, 40, 40); // Use faded heart to represent lost life
+            ctx.globalAlpha = 1; // Reset alpha after drawing the faded heart
+        }
+    }
+
     enemies.forEach((enemy) => {
         ctx.fillStyle = enemy.color;
         ctx.strokeStyle = 'black';
@@ -369,7 +398,6 @@ function draw() {
 
     ctx.fillStyle = 'white';
     ctx.font = '20px Arial';
-    ctx.fillText(`Health: ${health}`, 50, 30);
     ctx.textAlign = 'right';
     ctx.fillText(`Coins: ${coins}`, canvas.width - 10, 30);
 
@@ -424,3 +452,62 @@ function returnToMenu() {
 function drawMenuBackground() {
     ctx.drawImage(menuBackground, 0, 0, canvas.width, canvas.height); // Draw the menu background
 }
+
+// Add event listener to the settings button
+settingsButton.addEventListener('click', () => {
+    soundEnabled = !soundEnabled; // Toggle sound state
+
+    if (soundEnabled) {
+        hitSound.muted = false;
+        shotSound.muted = false;
+        lifeLostSound.muted = false;
+    } else {
+        hitSound.muted = true;
+        shotSound.muted = true;
+        lifeLostSound.muted = true;
+    }
+
+    // Optionally, show a message or indicator (could be added here)
+    console.log(`Sound Effects ${soundEnabled ? 'Enabled' : 'Disabled'}`);
+});
+
+// Get elements for settings menu
+const settingsMenu = document.getElementById('settingsMenu');
+const soundToggleButton = document.getElementById('soundToggleButton');
+const closeSettingsButton = document.getElementById('closeSettingsButton');
+
+// Event listener for the Settings button (opens the settings menu)
+settingsButton.addEventListener('click', () => {
+    playClickSound(); // Play click sound
+    settingsMenu.style.display = 'flex';  // Show settings menu
+});
+
+// Event listener for the Close button inside the settings menu
+closeSettingsButton.addEventListener('click', () => {
+    playClickSound(); // Play click sound
+    settingsMenu.style.display = 'none';  // Hide settings menu
+});
+
+// Event listener for toggling sound in settings
+soundToggleButton.addEventListener('click', () => {
+    playClickSound(); // Play click sound
+    soundEnabled = !soundEnabled; // Toggle the sound state
+
+    // Mute or unmute the sound effects based on the soundEnabled state
+    if (soundEnabled) {
+        hitSound.muted = false;
+        shotSound.muted = false;
+        lifeLostSound.muted = false;
+        document.getElementById('soundStatus').textContent = 'Sound: On'; // Update the sound status
+    } else {
+        hitSound.muted = true;
+        shotSound.muted = true;
+        lifeLostSound.muted = true;
+        document.getElementById('soundStatus').textContent = 'Sound: Off'; // Update the sound status
+    }
+
+    // Optionally log the sound state (you can remove this later)
+    console.log(`Sound Effects ${soundEnabled ? 'Enabled' : 'Disabled'}`);
+});
+
+

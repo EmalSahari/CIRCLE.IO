@@ -16,8 +16,9 @@
 <div id="menu">
   <img id="gameTitle" src="title.png" alt="Game Title" style="width: 100%; max-width: 500px; display: block; margin: 0 auto;" />
   <button id="startButton">Start</button>
-  <button id="customizeButton">Customize</button>
   <button id="upgradeButton">Upgrade</button>
+  <button id="customizeButton">Customize</button>
+  <button id="settingsButton">Settings</button>
 </div>
 
 <!-- Upgrade Menu -->
@@ -46,10 +47,6 @@
   </div>
 </div>
 
-
-
-
-
 <!-- Customize Menu -->
 <div id="customizeMenu" class="menu">
   <h2>Customize</h2>
@@ -58,6 +55,13 @@
   <button class="color-option" data-color="blue" style="background-color: blue;">Blue</button>
   <button class="color-option" data-color="green" style="background-color: green;">Green</button>
   <button id="closeCustomizeButton">Close</button>
+</div>
+
+<!-- Settings Menu -->
+<div id="settingsMenu" class="menu">
+  <p id="soundStatus">Sound: On</p> <!-- This will display the current sound state -->
+  <button id="soundToggleButton">Toggle Sound</button>
+  <button id="closeSettingsButton">Close</button>
 </div>
 
 <script src="main.js"></script>
