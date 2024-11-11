@@ -10,6 +10,9 @@ const heartImage = new Image();
 heartImage.src = 'heart.png';
 
 const settingsButton = document.getElementById('settingsButton');
+const settingsMenu = document.getElementById('settingsMenu');
+const soundToggleButton = document.getElementById('soundToggleButton');
+const closeSettingsButton = document.getElementById('closeSettingsButton');
 
 // Global freeze icon image (loaded only once)
 const freezeIcon = new Image();
@@ -571,3 +574,35 @@ function returnToMenu() {
 function drawMenuBackground() {
     ctx.drawImage(menuBackground, 0, 0, canvas.width, canvas.height);
 }
+
+// Open settings menu
+settingsButton.addEventListener('click', () => {
+    playClickSound();
+    settingsMenu.style.display = 'flex';  // Show settings menu
+    menu.style.display = 'none';  // Hide main menu
+});
+
+// Close settings menu
+closeSettingsButton.addEventListener('click', () => {
+    playClickSound();
+    settingsMenu.style.display = 'none';  // Hide settings menu
+    menu.style.display = 'flex';  // Show main menu again
+});
+
+// Sound toggle functionality
+soundToggleButton.addEventListener('click', () => {
+    playClickSound();
+    soundEnabled = !soundEnabled;
+
+    if (soundEnabled) {
+        hitSound.muted = false;
+        shotSound.muted = false;
+        lifeLostSound.muted = false;
+        document.getElementById('soundStatus').textContent = 'Sound: On';
+    } else {
+        hitSound.muted = true;
+        shotSound.muted = true;
+        lifeLostSound.muted = true;
+        document.getElementById('soundStatus').textContent = 'Sound: Off';
+    }
+});
