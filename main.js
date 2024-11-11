@@ -8,17 +8,18 @@ const closeUpgradeButton = document.getElementById('closeUpgradeButton');
 const coinsDisplay = document.getElementById('coinsDisplay');
 const heartImage = new Image();
 heartImage.src = 'heart.png';
+
 const settingsButton = document.getElementById('settingsButton');
-let soundEnabled = true; // Sound is enabled by default
 
-
+// Global freeze icon image (loaded only once)
+const freezeIcon = new Image();
+freezeIcon.src = 'freeze.png';  // Path to the freeze icon image
 
 // Load sound effects
 const hitSound = new Audio('hit.mp3');
 const shotSound = new Audio('shot.mp3');
-const lifeLostSound = new Audio('fhit.mp3'); // Load the life lost sound effect
+const lifeLostSound = new Audio('fhit.mp3');
 const clickSound = new Audio('click.mp3');
-
 
 // Canvas dimensions
 canvas.width = window.innerWidth;
@@ -32,14 +33,24 @@ let health = 3;
 let gameStarted = false;
 let spawnInterval = 2000;
 let spawnIntervalId;
-let multipleBulletsCount = 1; // Start with shooting 1 bullet
+let multipleBulletsCount = 1;
 
+let freezeUpgrade = false;
+let freezeDuration = 2;
+let freezeCost = 200;
+let enemiesFrozen = false;
+
+let freezeCooldown = 0;  // Cooldown timer in seconds
+let freezeTimeRemaining = 0;  // Time remaining for the freeze effect
+
+let timePassed = 0;  // Track the time passed
+const purpleThreshold = 100;  // Time after which enemies turn purple
 
 let upgradeCosts = {
     speed: 10,
     fireRate: 10,
     bulletSize: 10,
-    multipleBullets: 100
+    multipleBullets: 100,
 };
 
 // Player and upgrade variables
@@ -47,7 +58,7 @@ const keys = {};
 const shootingKeys = { ArrowUp: false, ArrowDown: false, ArrowLeft: false, ArrowRight: false };
 let speed = 3;
 let fireRate = 500;
-let bulletSize = 5; // Initial bullet size
+let bulletSize = 5;
 
 const player = {
     x: canvas.width / 2,
@@ -56,36 +67,30 @@ const player = {
     color: 'white',
 };
 
-// Update player position when the game starts or canvas resizes
 function resetPlayerPosition() {
     player.x = canvas.width / 2;
     player.y = canvas.height / 2;
 }
 
-// Play the click sound whenever a button is clicked
 function playClickSound() {
     clickSound.play();
 }
 
-// Background image
+// Background images
 const menuBackground = new Image();
-menuBackground.src = 'background.png'; // Menu background image
-
-const gameBackground = new Image(); // New game background
-gameBackground.src = 'background.png'; // Game screen background
-
-let currentBackground = menuBackground; // Default background is the menu background
+menuBackground.src = 'background.png';
+const gameBackground = new Image();
+gameBackground.src = 'background.png';
+let currentBackground = menuBackground;
 
 gameBackground.onload = () => {
     drawMenuBackground();
 };
 
-// Timer Variables
+// Timer variables
 let startTime;
-let elapsedTime = 0; // Elapsed time in seconds
-let personalRecord = 0; // Personal record in seconds
+let personalRecord = 0;
 
-// Track key presses for movement and shooting
 document.addEventListener('keydown', (e) => {
     keys[e.key.toLowerCase()] = true;
     if (e.key in shootingKeys) shootingKeys[e.key] = true;
@@ -96,7 +101,6 @@ document.addEventListener('keyup', (e) => {
     if (e.key in shootingKeys) shootingKeys[e.key] = false;
 });
 
-// Update shooting direction based on key presses
 document.addEventListener('keydown', (e) => {
     if (e.key === 'ArrowUp') shootingDirection = { x: 0, y: -1 };
     else if (e.key === 'ArrowDown') shootingDirection = { x: 0, y: 1 };
@@ -104,16 +108,14 @@ document.addEventListener('keydown', (e) => {
     else if (e.key === 'ArrowRight') shootingDirection = { x: 1, y: 0 };
 });
 
-// Ensure shooting stops when all keys are released
 document.addEventListener('keyup', (e) => {
     if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(e.key)) {
         if (!Object.values(shootingKeys).includes(true)) {
-            shootingDirection = null; // Stop shooting if no direction is set
+            shootingDirection = null;
         }
     }
 });
 
-// Resize canvas dynamically
 function resizeCanvas() {
     canvas.width = window.innerWidth;
     canvas.height = window.innerHeight;
@@ -122,91 +124,172 @@ function resizeCanvas() {
 window.addEventListener('resize', resizeCanvas);
 resizeCanvas();
 
-// Start button event listener
 startButton.addEventListener('click', () => {
-    playClickSound(); // Play click sound
+    playClickSound();
     menu.style.display = 'none';
     gameStarted = true;
-    resetPlayerPosition(); // Reset player position to the center when the game starts
+    resetPlayerPosition();
     startGame();
-    currentBackground = gameBackground; // Change background to the game screen
-    drawMenuBackground(); // Redraw with the new background
-    startTime = Date.now(); // Start the timer when the game begins
+    currentBackground = gameBackground;
+    drawMenuBackground();
+    startTime = Date.now();
 });
 
 window.addEventListener('resize', () => {
     resizeCanvas();
-    resetPlayerPosition(); // Keep player in the center on resize
+    resetPlayerPosition();
 });
 
-// Hide the main buttons (start button, upgrade button)
+// Hide and show buttons
 function hideMainButtons() {
     startButton.style.display = 'none';
     upgradeButton.style.display = 'none';
 }
 
-// Show the main buttons (start button, upgrade button)
 function showMainButtons() {
     startButton.style.display = 'block';
     upgradeButton.style.display = 'block';
 }
 
+// Game loop to update everything, including freeze cooldown
 function gameLoop() {
     if (gameStarted) {
+        timePassed = Math.floor((Date.now() - startTime) / 1000);
+
+        updateFreezeCooldown();  // Update freeze cooldown
+        updateFreezeEffect();  // Update the freeze effect
+
         updatePlayer();
         updateBullets();
         updateEnemies();
-        requestAnimationFrame(gameLoop); // Keep the game running in the background
+        requestAnimationFrame(gameLoop);
     }
 }
 
-requestAnimationFrame(gameLoop); // Start the game loop when the game starts
+requestAnimationFrame(gameLoop);
 
+// Update freeze cooldown (decrement it)
+function updateFreezeCooldown() {
+    if (freezeCooldown > 0) {
+        freezeCooldown -= 1;  // Decrease the cooldown
+    }
+}
 
-// Update the stats display in the upgrade menu
+// Decrease the time remaining for the freeze effect
+function updateFreezeEffect() {
+    if (freezeTimeRemaining > 0) {
+        freezeTimeRemaining -= 1;  // Decrease freeze time remaining
+    }
+
+    // When freeze time is over and cooldown is zero, reset freeze status
+    if (freezeTimeRemaining === 0 && freezeCooldown === 0) {
+        enemiesFrozen = false;
+        enemies.forEach(enemy => {
+            enemy.speed = 2 + Math.random() * 1.5;  // Reset enemy speed
+        });
+    }
+}
+
+// Freeze ability activation on pressing "C" with cooldown
+document.addEventListener('keydown', (e) => {
+    if (e.key === 'c' && freezeUpgrade && freezeCooldown === 0) {
+        // Start freeze effect
+        enemiesFrozen = true;
+        freezeTimeRemaining = freezeDuration;
+        enemies.forEach(enemy => {
+            enemy.speed = 0;  // Stop enemy movement
+        });
+
+        // Start cooldown for the freeze ability (30 seconds)
+        freezeCooldown = 30;
+        playClickSound();  // Play sound when freeze is activated
+    }
+});
+
+// Draw freeze icon with cooldown timer
+function drawFreezeIcon() {
+    if (gameStarted && freezeUpgrade) {
+        const iconSize = 40;  // Size of the icon
+        const borderWidth = 3;  // Border width around the icon
+        const iconX = 20;  // X position of the icon
+        const iconY = canvas.height - 60;  // Y position of the icon
+
+        // Draw the border around the icon
+        ctx.strokeStyle = 'black';
+        ctx.lineWidth = borderWidth;
+        ctx.strokeRect(iconX, iconY, iconSize, iconSize);
+
+        // Draw the freeze icon image
+        ctx.drawImage(freezeIcon, iconX + borderWidth, iconY + borderWidth, iconSize - borderWidth * 2, iconSize - borderWidth * 2);
+
+        // If the freeze ability is on cooldown, draw a gray icon with the countdown timer
+        if (freezeCooldown > 0) {
+            ctx.fillStyle = 'gray';
+            ctx.globalAlpha = 0.5;
+            ctx.fillRect(iconX + borderWidth, iconY + borderWidth, iconSize - borderWidth * 2, iconSize - borderWidth * 2);
+            ctx.globalAlpha = 1;
+
+            // Draw the countdown timer in the icon
+            ctx.fillStyle = 'black';
+            ctx.font = '16px Arial';
+            ctx.textAlign = 'center';
+            ctx.fillText(`${freezeCooldown}`, iconX + iconSize / 2, iconY + iconSize / 1.5);
+        }
+    }
+}
+
 function updateUpgradeMenuStats() {
     document.getElementById('speedStat').textContent = speed.toFixed(1);
     document.getElementById('fireRateStat').textContent = fireRate;
     document.getElementById('bulletSizeStat').textContent = bulletSize;
-    document.getElementById('multipleBulletsStat').textContent = multipleBulletsCount; // Display number of bullets
-    document.getElementById('multipleBulletsCost').textContent = multipleBulletsCost; // Display cost of multiple bullets upgrade
+    document.getElementById('multipleBulletsStat').textContent = multipleBulletsCount;
+    document.getElementById('multipleBulletsCost').textContent = upgradeCosts.multipleBullets;
+    document.getElementById('freezeDurationStat').textContent = freezeUpgrade ? freezeDuration : 0; // Display 0 if freezeUpgrade is false
 }
 
-// Upgrade button event listener
+// Handle upgrade button clicks
 upgradeButton.addEventListener('click', () => {
-    playClickSound(); // Play click sound
-    hideMainButtons(); // Hide main buttons when upgrade menu opens
+    playClickSound();
+    hideMainButtons();
     updateUpgradeMenuCoins();
-    upgradeMenu.style.display = 'flex'; // Show the upgrade menu
+    upgradeMenu.style.display = 'flex';
 });
 
-// Close upgrade button event listener
 closeUpgradeButton.addEventListener('click', () => {
-    playClickSound(); // Play click sound
-    upgradeMenu.style.display = 'none'; // Hide the upgrade menu
-    showMainButtons(); // Show main buttons again
+    playClickSound();
+    upgradeMenu.style.display = 'none';
+    showMainButtons();
 });
 
 document.querySelectorAll('.upgrade-option').forEach((button) => {
     button.addEventListener('click', () => {
         const upgradeType = button.dataset.upgrade;
-
-        // Handle the 'Multiple Bullets' upgrade separately
-        if (upgradeType === 'multipleBullets') {
-            if (coins >= upgradeCosts.multipleBullets) {
-                multipleBulletsCount++; // Increase the number of bullets to shoot
-                coins -= upgradeCosts.multipleBullets; // Deduct the cost for the upgrade
-                upgradeCosts.multipleBullets = Math.floor(upgradeCosts.multipleBullets * 1.5); // Increase cost for the next upgrade
-
-                // Update the displayed cost for this upgrade
-                button.textContent = `Multiple Bullets (Cost: ${upgradeCosts.multipleBullets} coins)`; // Correctly show cost
+        if (upgradeType === 'freeze') {
+            if (coins >= freezeCost) {
+                coins -= freezeCost;
+                freezeUpgrade = true;
+                freezeCost = 100;
+                freezeDuration += 1;
+                button.textContent = `Freeze Enemies (Cost: ${freezeCost} coins)`;
+                playClickSound(); // Play the click sound when freeze is purchased
                 updateUpgradeMenuCoins();
-                updateUpgradeMenuStats(); // Update stats display after upgrade
+                updateUpgradeMenuStats();
+            } else {
+                alert('Not enough coins!');
+            }
+        } else if (upgradeType === 'multipleBullets') {
+            if (coins >= upgradeCosts.multipleBullets) {
+                multipleBulletsCount++;
+                coins -= upgradeCosts.multipleBullets;
+                upgradeCosts.multipleBullets = Math.floor(upgradeCosts.multipleBullets * 1.5);
+                button.textContent = `Multiple Bullets (Cost: ${upgradeCosts.multipleBullets} coins)`;
+                playClickSound(); // Play the click sound when multiple bullets is purchased
+                updateUpgradeMenuCoins();
+                updateUpgradeMenuStats();
             } else {
                 alert('Not enough coins!');
             }
         } else {
-            // Handle other upgrades like speed, fireRate, bulletSize
             if (coins >= upgradeCosts[upgradeType]) {
                 coins -= upgradeCosts[upgradeType];
                 if (upgradeType === 'speed') {
@@ -214,17 +297,13 @@ document.querySelectorAll('.upgrade-option').forEach((button) => {
                 } else if (upgradeType === 'fireRate') {
                     fireRate = Math.max(fireRate - 70, 0);
                 } else if (upgradeType === 'bulletSize') {
-                    bulletSize += 2; // Increase bullet size
+                    bulletSize += 2;
                 }
-
-                // Increase the cost for the next purchase of this upgrade
                 upgradeCosts[upgradeType] = Math.floor(upgradeCosts[upgradeType] * 1.5);
-
-                // Update the displayed cost for this upgrade
                 button.textContent = `Increase ${upgradeType.charAt(0).toUpperCase() + upgradeType.slice(1)} (Cost: ${upgradeCosts[upgradeType]} coins)`;
-
+                playClickSound(); // Play the click sound when any other upgrade is purchased
                 updateUpgradeMenuCoins();
-                updateUpgradeMenuStats(); // Update stats display after upgrade
+                updateUpgradeMenuStats();
             } else {
                 alert('Not enough coins!');
             }
@@ -232,27 +311,8 @@ document.querySelectorAll('.upgrade-option').forEach((button) => {
     });
 });
 
-// Update the stats display in the upgrade menu
-function updateUpgradeMenuStats() {
-    document.getElementById('speedStat').textContent = speed.toFixed(1);
-    document.getElementById('fireRateStat').textContent = fireRate;
-    document.getElementById('bulletSizeStat').textContent = bulletSize;
-    document.getElementById('multipleBulletsStat').textContent = multipleBulletsCount; // Display number of bullets
-    document.getElementById('multipleBulletsCost').textContent = upgradeCosts.multipleBullets; // Display cost of multiple bullets upgrade
-}
-
-// Function to update the coins display
-function updateUpgradeMenuCoins() {
-    coinsDisplay.textContent = `Coins: ${coins}`;
-}
-
-
-
-
-
 // Start the game
 function startGame() {
-    // Do NOT reset coins here to preserve them across rounds
     health = 3;
     enemies = [];
     bullets = [];
@@ -261,7 +321,7 @@ function startGame() {
     draw();
 }
 
-// Enemy spawn logic with increasing rate
+// Enemy spawn logic
 function increaseSpawnRate() {
     spawnIntervalId = setInterval(() => {
         spawnEnemy();
@@ -290,34 +350,32 @@ function spawnEnemy() {
         speed: 2 + Math.random() * 1.5,
         targetX: player.x,
         targetY: player.y,
+        hitCount: 1,
     });
 }
 
-// Continuous shooting with multiple bullets
+// Bullet spawning
 setInterval(() => {
     if (!gameStarted) return;
-    if (shootingDirection) { // Check if there's a direction set
+    if (shootingDirection) {
         const magnitude = Math.hypot(shootingDirection.x, shootingDirection.y);
-        const baseAngle = Math.atan2(shootingDirection.y, shootingDirection.x); // Base direction
+        const baseAngle = Math.atan2(shootingDirection.y, shootingDirection.x);
 
-        // Shoot multiple bullets based on the multipleBulletsCount
         for (let i = 0; i < multipleBulletsCount; i++) {
-            // Spread bullets around the base angle
-            const angleOffset = (Math.PI / 12) * (i - Math.floor(multipleBulletsCount / 2)); // Fan the bullets evenly
+            const angleOffset = (Math.PI / 12) * (i - Math.floor(multipleBulletsCount / 2));
             const angle = baseAngle + angleOffset;
 
             bullets.push({
                 x: player.x,
                 y: player.y,
-                vx: Math.cos(angle) * 10, // Bullet direction using angle
-                vy: Math.sin(angle) * 10, // Bullet direction using angle
+                vx: Math.cos(angle) * 10,
+                vy: Math.sin(angle) * 10,
             });
         }
 
-        shotSound.play(); // Play the shot sound effect
+        shotSound.play();
     }
 }, fireRate);
-
 
 function updateUpgradeMenuCoins() {
     coinsDisplay.textContent = `Coins: ${coins}`;
@@ -343,28 +401,27 @@ function updateBullets() {
         bullet.x += bullet.vx;
         bullet.y += bullet.vy;
 
-        // Remove bullet if it goes off-screen
         if (bullet.x < 0 || bullet.x > canvas.width || bullet.y < 0 || bullet.y > canvas.height) {
             bullets.splice(bulletIndex, 1);
-            return; // Skip to the next bullet
+            return;
         }
 
         enemies.forEach((enemy, enemyIndex) => {
             if (Math.hypot(bullet.x - enemy.x, bullet.y - enemy.y) < enemy.size) {
-                // Play hit sound effect
-                hitSound.currentTime = 0; // Reset playback position for overlap
-                hitSound.play();
+                if (timePassed >= purpleThreshold && enemy.hitCount < 2) {
+                    enemy.hitCount += 1;
+                    bullets.splice(bulletIndex, 1);
+                    return;
+                }
 
-                // Award coins for hitting an enemy
-                coins += 1;
-
-                // Remove the enemy
-                enemies.splice(enemyIndex, 1); // Remove enemy
-
-                // Remove bullet after hitting an enemy
-                bullets.splice(bulletIndex, 1);
-
-                return; // Stop checking further enemies
+                if (enemy.hitCount < 2) {
+                    hitSound.currentTime = 0;
+                    hitSound.play();
+                    coins += 1;
+                    enemies.splice(enemyIndex, 1);
+                    bullets.splice(bulletIndex, 1);
+                    return;
+                }
             }
         });
     });
@@ -372,30 +429,37 @@ function updateBullets() {
 
 function updateEnemies() {
     enemies.forEach((enemy, index) => {
-        const dx = player.x - enemy.x;
-        const dy = player.y - enemy.y;
-        const magnitude = Math.hypot(dx, dy);
-        enemy.x += (dx / magnitude) * enemy.speed;
-        enemy.y += (dy / magnitude) * enemy.speed;
+        if (timePassed >= purpleThreshold) {
+            let purpleIntensity = Math.min(255, (timePassed - purpleThreshold) * 2);
+            enemy.color = `rgb(${255 - purpleIntensity}, 0, ${purpleIntensity})`;
+        }
 
-        // Check for collision with player
-        if (Math.hypot(enemy.x - player.x, enemy.y - player.y) < player.radius + enemy.size / 2) {
+        if (enemy.hitCount >= 2) {
             enemies.splice(index, 1);
-            health -= 1;
+            coins += 2;
+        } else {
+            const dx = player.x - enemy.x;
+            const dy = player.y - enemy.y;
+            const magnitude = Math.hypot(dx, dy);
+            enemy.x += (dx / magnitude) * enemy.speed;
+            enemy.y += (dy / magnitude) * enemy.speed;
 
-            // Reset and play the life lost sound to allow overlapping sounds
-            lifeLostSound.currentTime = 0; // Reset playback position to the start
-            lifeLostSound.play(); // Play the sound effect when losing a life
+            if (Math.hypot(enemy.x - player.x, enemy.y - player.y) < player.radius + enemy.size / 2) {
+                enemies.splice(index, 1);
+                health -= 1;
 
-            if (health <= 0) gameOver();
+                lifeLostSound.currentTime = 0;
+                lifeLostSound.play();
+
+                if (health <= 0) gameOver();
+            }
         }
     });
 }
 
 function draw() {
-    const elapsedTime = Math.floor((Date.now() - startTime) / 1000); // Calculate elapsed time in seconds
-
-    ctx.drawImage(currentBackground, 0, 0, canvas.width, canvas.height); // Use the current background image
+    const elapsedTime = Math.floor((Date.now() - startTime) / 1000);
+    ctx.drawImage(currentBackground, 0, 0, canvas.width, canvas.height);
 
     ctx.fillStyle = player.color;
     ctx.beginPath();
@@ -412,19 +476,27 @@ function draw() {
         ctx.fill();
         ctx.strokeStyle = 'black';
         ctx.lineWidth = 1;
-        ctx.stroke();  // Adds thin stroke to bullets
+        ctx.stroke();
     });
 
-    // Draw hearts based on the player's health
+    // Draw the freeze icon if the freeze upgrade is active
+    drawFreezeIcon();  // Call to draw the icon
+
     for (let i = 0; i < 3; i++) {
         if (i < health) {
-            // Draw the heart image for each remaining life
-            ctx.drawImage(heartImage, 50 + i * 50, 20, 40, 40); // Adjust size to 40x40 for bigger hearts
+            ctx.shadowOffsetX = 2;
+            ctx.shadowOffsetY = 2;
+            ctx.shadowBlur = 5;
+            ctx.shadowColor = 'rgba(0, 0, 0, 0.5)';
+            ctx.drawImage(heartImage, 50 + i * 50, 20, 40, 40);
+            ctx.shadowOffsetX = 0;
+            ctx.shadowOffsetY = 0;
+            ctx.shadowBlur = 0;
+            ctx.shadowColor = 'transparent';
         } else {
-            // Optionally, you can add a transparent heart image or a different image to indicate a lost life
-            ctx.globalAlpha = 0.3; // Make the missing heart faded
-            ctx.drawImage(heartImage, 50 + i * 50, 20, 40, 40); // Use faded heart to represent lost life
-            ctx.globalAlpha = 1; // Reset alpha after drawing the faded heart
+            ctx.globalAlpha = 0.3;
+            ctx.drawImage(heartImage, 50 + i * 50, 20, 40, 40);
+            ctx.globalAlpha = 1;
         }
     }
 
@@ -451,12 +523,10 @@ function draw() {
     ctx.textAlign = 'right';
     ctx.fillText(`Coins: ${coins}`, canvas.width - 10, 30);
 
-    // Display elapsed time in the top middle
     ctx.textAlign = 'center';
     ctx.font = '24px Arial';
     ctx.fillText(`Time: ${elapsedTime}s`, canvas.width / 2, 30);
 
-    // Display personal record
     ctx.font = '18px Arial';
     ctx.fillText(`Best Time: ${personalRecord}s`, canvas.width / 2, 60);
 
@@ -469,10 +539,9 @@ function draw() {
 }
 
 function gameOver() {
-    // Check if the current time is the new personal record
     const elapsedTime = Math.floor((Date.now() - startTime) / 1000);
     if (elapsedTime > personalRecord) {
-        personalRecord = elapsedTime; // Update personal record
+        personalRecord = elapsedTime;
     }
 
     gameStarted = false;
@@ -500,68 +569,5 @@ function returnToMenu() {
 }
 
 function drawMenuBackground() {
-    ctx.drawImage(menuBackground, 0, 0, canvas.width, canvas.height); // Draw the menu background
+    ctx.drawImage(menuBackground, 0, 0, canvas.width, canvas.height);
 }
-
-// Add event listener to the settings button
-settingsButton.addEventListener('click', () => {
-    soundEnabled = !soundEnabled; // Toggle sound state
-
-    if (soundEnabled) {
-        hitSound.muted = false;
-        shotSound.muted = false;
-        lifeLostSound.muted = false;
-    } else {
-        hitSound.muted = true;
-        shotSound.muted = true;
-        lifeLostSound.muted = true;
-    }
-
-    // Optionally, show a message or indicator (could be added here)
-    console.log(`Sound Effects ${soundEnabled ? 'Enabled' : 'Disabled'}`);
-});
-
-// Get elements for settings menu
-const settingsMenu = document.getElementById('settingsMenu');
-const soundToggleButton = document.getElementById('soundToggleButton');
-const closeSettingsButton = document.getElementById('closeSettingsButton');
-
-// Event listener for the Settings button (opens the settings menu)
-settingsButton.addEventListener('click', () => {
-    playClickSound(); // Play click sound
-
-    settingsMenu.style.display = 'flex';  // Show settings menu
-});
-
-// Event listener for the Close button inside the settings menu
-closeSettingsButton.addEventListener('click', () => {
-    playClickSound(); // Play click sound
-
-    settingsMenu.style.display = 'none';  // Hide settings menu
-});
-
-// Event listener for toggling sound in settings
-soundToggleButton.addEventListener('click', () => {
-    playClickSound(); // Play click sound
-    soundEnabled = !soundEnabled; // Toggle the sound state
-
-    // Mute or unmute the sound effects based on the soundEnabled state
-    if (soundEnabled) {
-        hitSound.muted = false;
-        shotSound.muted = false;
-        lifeLostSound.muted = false;
-        document.getElementById('soundStatus').textContent = 'Sound: On'; // Update the sound status
-    } else {
-        hitSound.muted = true;
-        shotSound.muted = true;
-        lifeLostSound.muted = true;
-        document.getElementById('soundStatus').textContent = 'Sound: Off'; // Update the sound status
-    }
-
-    // Optionally log the sound state (you can remove this later)
-    console.log(`Sound Effects ${soundEnabled ? 'Enabled' : 'Disabled'}`);
-});
-
-
-
-

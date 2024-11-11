@@ -17,7 +17,6 @@
   <img id="gameTitle" src="title.png" alt="Game Title" style="width: 100%; max-width: 500px; display: block; margin: 0 auto;" />
   <button id="startButton">Start</button>
   <button id="upgradeButton">Upgrade</button>
-  <button id="customizeButton">Customize</button>
   <button id="settingsButton">Settings</button>
 </div>
 
@@ -37,6 +36,9 @@
     <li>
       <button class="upgrade-option" data-upgrade="multipleBullets">Multiple Bullets (Cost: <span id="multipleBulletsCost">100</span> coins)</button>
     </li>
+    <li>
+      <button class="upgrade-option" data-upgrade="freeze">Freeze Enemies (Cost: <span id="freezeCost">200</span> coins)</button>
+    </li>
   </ul>
 
   <!-- Cross icon for closing the menu -->
@@ -48,17 +50,8 @@
     <p>Fire Rate: <span id="fireRateStat">500</span> ms</p>
     <p>Bullet Size: <span id="bulletSizeStat">5</span></p>
     <p>Multiple Bullets: <span id="multipleBulletsStat">1</span></p>
+    <p>Freeze Duration: <span id="freezeDurationStat">0</span> seconds</p>
   </div>
-</div>
-
-<!-- Customize Menu -->
-<div id="customizeMenu" class="menu">
-  <h2>Customize</h2>
-  <p>Select Color:</p>
-  <button class="color-option" data-color="white" style="background-color: white;">White</button>
-  <button class="color-option" data-color="blue" style="background-color: blue;">Blue</button>
-  <button class="color-option" data-color="green" style="background-color: green;">Green</button>
-  <button id="closeCustomizeButton">Close</button>
 </div>
 
 <!-- Settings Menu -->
